@@ -1,0 +1,41 @@
+#include <winsock2.h>
+#include <iostream>
+#include "Packet.h"
+
+#pragma comment(lib,"ws2_32.lib")
+
+void handle_client(SOCKET client_sock);
+
+int main() {
+	WSADATA wsaData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return -1;
+	SOCKET listenSock = socket(AF_INET, SOCK_STREAM, 0);
+	
+	sockaddr_in serverAddr;
+	memset(&serverAddr, 0, sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(9000);
+	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	
+	bind(listenSock, (sockaddr*)&serverAddr, sizeof(serverAddr));
+	listen(listenSock, SOMAXCONN);
+
+	std::cout << "일기장 서버 시작(port : 9000)" << std::endl;
+
+	while (1) {
+		sockaddr_in clientAddr;
+		int addrLen = sizeof(clientAddr);
+
+		SOCKET clientSock = accept(listenSock, (sockaddr*)&clientAddr, &addrLen);
+		if (clientSock != INVALID_SOCKET) {
+			std::cout << "클라이언트 접속 성공 ! " << std::endl;
+			handle_client(clientSock);
+		}
+	}
+	
+
+	closesocket(listenSock);
+	WSACleanup();
+	return 0;
+
+}
