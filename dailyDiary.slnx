@@ -3,5 +3,7 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="dailyDiary/dailyDiary.vcxproj" />
+  <Folder Name="/솔루션 항목/" />
+  <Project Path="dailyDiary/dailyDiary.vcxproj" Id="ca503cdf-8387-4ca0-b41e-aa7553e3b73b" />
+  <Project Path="DiaryClient/DiaryClient.vcxproj" Id="64e1525d-d43c-40b2-9493-26e028eeef96" />
 </Solution>

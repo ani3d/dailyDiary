@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{ca503cdf-8387-4ca0-b41e-aa7553e3b73b}</ProjectGuid>
-    <RootNamespace>dailyDiary</RootNamespace>
+    <ProjectGuid>{915e5484-88cf-4412-ad7a-f7cd4d02ece7}</ProjectGuid>
+    <RootNamespace>DiaryProject</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -127,13 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\Downloads\sqlite-amalgamation-3510100\sqlite-amalgamation-3510100\sqlite3.c" />
-    <ClCompile Include="Handle.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Packet.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\..\Downloads\sqlite-amalgamation-3510100\sqlite-amalgamation-3510100\sqlite3.h" />
+    <ClCompile Include="DiaryProject.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

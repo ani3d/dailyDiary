@@ -9,11 +9,6 @@ enum PacketType {
 	Login_Request=4,
 
 
-
-
-
-
-
 	Response_Ok = 200,
 	Response_Fail = 400
 };

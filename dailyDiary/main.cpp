@@ -4,13 +4,16 @@
 
 #pragma comment(lib,"ws2_32.lib")
 
-void handle_client(SOCKET client_sock);
+void sv_handle_client(SOCKET client_sock);
+void sv_init_db();
 
 int main() {
 	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return -1;
 	SOCKET listenSock = socket(AF_INET, SOCK_STREAM, 0);
 	
+	sv_init_db();
+
 	sockaddr_in serverAddr;
 	memset(&serverAddr, 0, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
@@ -29,7 +32,7 @@ int main() {
 		SOCKET clientSock = accept(listenSock, (sockaddr*)&clientAddr, &addrLen);
 		if (clientSock != INVALID_SOCKET) {
 			std::cout << "클라이언트 접속 성공 ! " << std::endl;
-			handle_client(clientSock);
+			sv_handle_client(clientSock);
 		}
 	}
 	
