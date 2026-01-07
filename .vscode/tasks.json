@@ -1,0 +1,26 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: 현재 폴더 소스 빌드",
+            "command": "cmd",
+            "args": [
+                "/c",
+                "chcp 65001 > nul && C:\\mingw64\\bin\\g++.exe",
+                "-fdiagnostics-color=always",
+                "-g",
+                // 1. C 언어로 sqlite3.c 컴파일
+                "-x", "c", "${fileDirname}\\sqlite3.c",
+                // 2. C++로 현재 폴더의 모든 소스 컴파일
+                "-x", "c++", "${fileDirname}\\*.cpp",
+                "-o", "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "-lws2_32"
+            ],
+            "options": { "cwd": "${fileDirname}" },
+            "problemMatcher": ["$gcc"],
+            "group": { "kind": "build", "isDefault": true },
+            "detail": "열려 있는 파일의 폴더 내 모든 소스를 빌드합니다."
+        }
+    ]
+}

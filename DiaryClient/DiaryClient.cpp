@@ -1,4 +1,4 @@
-﻿// DiaryClient.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
+// DiaryClient.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
 //
 
 #include <iostream>
@@ -94,6 +94,7 @@ bool cl_login(SOCKET sock) {
 }
 int main()
 {
+    std::setlocale(LC_ALL,"ko_KR.UTF-8");
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
     SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);

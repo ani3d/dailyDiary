@@ -28,11 +28,11 @@ void sv_init_db() {
 		"value TEXT);"
 		
 		"CREATE TABLE IF NOT EXISTS diary ("
-		"id INTEGER PRIMARY KEY AUTOINCREMENT,"
 		"year INTEGER, "
 		"month INTEGER, "
 		"day INTEGER, "
-		"content TEXT);"
+		"content TEXT),"
+		"PRIMARY KEY(year,month, day));";
 
 		"INSERT OR IGNORE INTO config(key,value) VALUES ('master_password', '1234');";
 	char* errMsg = nullptr;
@@ -73,7 +73,7 @@ void sv_login(SOCKET client_sock, LoginPacket& lp) {
 
 void sv_write_diary(DiaryPacket& packet) {
 	char* sql = sqlite3_mprintf(
-		"INSERT INTO diary(year, month, day, content) VALUES (%d, %d,%d,'%q');",
+		"INSERT OR REPLACE INTO diary(year, month, day, content) VALUES (%d, %d,%d,'%q');",
 		packet.year, packet.month, packet.day, packet.content);
 
 	char* errMsg = nullptr;

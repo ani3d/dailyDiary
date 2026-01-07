@@ -8,6 +8,7 @@ void sv_handle_client(SOCKET client_sock);
 void sv_init_db();
 
 int main() {
+	std::setlocale(LC_ALL,"ko_KR.UTF-8");
 	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return -1;
 	SOCKET listenSock = socket(AF_INET, SOCK_STREAM, 0);
@@ -23,7 +24,7 @@ int main() {
 	bind(listenSock, (sockaddr*)&serverAddr, sizeof(serverAddr));
 	listen(listenSock, SOMAXCONN);
 
-	std::cout << "일기장 서버 시작(port : 9000)" << std::endl;
+	std::cout << "일기장 서버 시작(포트 9000)" << std::endl;
 
 	while (1) {
 		sockaddr_in clientAddr;
@@ -31,7 +32,7 @@ int main() {
 
 		SOCKET clientSock = accept(listenSock, (sockaddr*)&clientAddr, &addrLen);
 		if (clientSock != INVALID_SOCKET) {
-			std::cout << "클라이언트 접속 성공 ! " << std::endl;
+			std::cout << "클라이언트 접속 성공!"  << std::endl;
 			sv_handle_client(clientSock);
 		}
 	}
