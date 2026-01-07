@@ -71,35 +71,26 @@ void cl_list_diary(SOCKET sock) {
     }
 }
 
-void cl_signup(SOCKET sock) {
-    LoginPacket lp;
-    memset(&lp, 0, sizeof(lp));
-    lp.type = Signup_Request;
-    std::cout << "\n--- 회원가입 ---" << std::endl;
-    std::cout << "아이디 : "; std::cin >> lp.username;
-    std::cout << "패스워드 : "; std::cin >> lp.password;
-    send(sock, (char*)&lp, sizeof(lp), 0);
-    recv(sock, (char*)&lp, sizeof(lp), 0);
-    if (lp.type == Response_Ok) {
-        std::cout << "회원가입 성공! 로그인 진행하기" << std::endl;
-    }
-    else {
-        std::cout << "이미 존재하는 아이디이거나 가입에 실패했습니다. " << std::endl;
-    }
 
-}
-void cl_login(SOCKET sock) {
+bool cl_login(SOCKET sock) {
     LoginPacket lp;
     memset(&lp, 0, sizeof(lp));
     lp.type = Login_Request;
 
     std::cout << "  로그인   " << std::endl;
-    std::cout << "아이디 : "; std::cin >> lp.username;
     std::cout << "비밀번호 : "; std::cin >> lp.password;
 
     send(sock, (char*)&lp, sizeof(lp), 0);
     recv(sock, (char*)&lp, sizeof(lp), 0);
 
+    if(lp.type==Response_Ok){
+        std::cout<<"로그인 성공!\n";
+        return true;
+    }
+    else{
+        std::cout<<"로그인 실패 ! 비밀번호 확인 요망. "<<std::endl;
+        return false;
+    }
 }
 int main()
 {
@@ -112,64 +103,52 @@ int main()
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(9000);
     inet_pton(AF_INET, "127.0.0.1", &serverAddr.sin_addr);
-    bool is_loggedn_in = false;
+    bool is_logged_in = false;
 
     while (1) {
-
-        std::cout << "--메뉴--" << std::endl;
-        std::cout << "0.회원 가입" << std::endl;
-        std::cout << "1. 일기 쓰기" << std::endl;
-        std::cout << "2. 일기 확인" << std::endl;
-        std::cout << "3. 일기 목록" << std::endl;
-        std::cout << "4. 로그인" << std::endl;
-        std::cout << "-1. 종료" << std::endl;
-        std::cout << "선택 : ";
-        int choice;
-
-
-        DiaryPacket packet;
-        memset(&packet, 0, sizeof(packet));
-
-        
-
-        if (!(std::cin >> choice)) {
-            std::cin.clear();
-            std::cin.ignore(INT_MAX, '\n');
-            continue;
+        if(!is_logged_in){
+            std::cout<<"\n1.로그인 -1.종료 \n 선택 :";
+            int choice;
+            if (!(std::cin >> choice)) {
+                std::cin.clear();
+                std::cin.ignore(INT_MAX, '\n');
+            
+                continue;
+            }
+            std::cin.ignore();
+            if (choice == -1) break;
+            if(choice==1){
+                SOCKET tempSock=socket(AF_INET,SOCK_STREAM,0);
+                if(connect(tempSock,(sockaddr*)&serverAddr,sizeof(serverAddr))!=SOCKET_ERROR){
+                    if(cl_login(tempSock)) is_logged_in=true;
+                }
+                closesocket(tempSock);
+            }
         }
-        std::cin.ignore();
-        if (choice == -1) break;
+        else{
+            int choice;
+            std::cout<<"\n 일기장 메뉴\n";
+            std::cout<<"1.일기 쓰기 2. 일기 확인 3.일기 목록 4. 로그아웃 -1 종료 \n 선택 :";
+            std::cin>>choice;
+            std::cin.ignore();
 
-        SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
-        
-        if (connect(sock, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
-            int err = WSAGetLastError();
-            std::cout << "서버 접속 실패!에러코드: "<< err << std::endl;
-            closesocket(sock);
-            continue;
+            if(choice==-1) break;
+            if(choice==4){
+                is_logged_in=false;
+                continue;
+            }
+            SOCKET tempSock=socket(AF_INET,SOCK_STREAM,0);
+            if(connect(tempSock,(sockaddr*)&serverAddr,sizeof(serverAddr))!=SOCKET_ERROR){
+                switch(choice){
+                    case Write_Diary: cl_write_diary(tempSock);std::cout<<"저장 완료 !\n"; break;
+                    case Read_Diary: cl_read_diary(tempSock); break;
+                    case List_Diary: cl_list_diary(tempSock); break;
+                }
+                
+            }
+            closesocket(tempSock);
         }
-        
-        std::cout << "서버 접속 성공 !" << std::endl;
-        switch (choice) {
-            case Write_Diary:
-                cl_write_diary(sock);
-                std::cout << "저장 완료!\n";
-                break;
-            case Read_Diary:
-                cl_read_diary(sock);
-                break;
-            case List_Diary:
-                cl_list_diary(sock);
-                break;
-            case Signup_Request:
-                cl_signup(sock);
-                break;
-            default:
-                std::cout << "잘못된 선택" << std::endl;
-                break;
-        
-        }
-        closesocket(sock);
+
     }
 
     

@@ -28,7 +28,7 @@ struct DiaryPacket {
 
 struct LoginPacket {
 	PacketType type;
-	char username[20];
+	
 	char password[20];
 };
 

@@ -23,18 +23,18 @@ void sv_init_db() {
 	}
 
 	const char* sql =
-		"CREATE TABLE IF NOT EXISTS users("
-		"id INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"username TEXT NOT NULL UNIQUE,"
-		"password TEXT NOT NULL);"
+		"CREATE TABLE IF NOT EXISTS config("
+		"key TEXT PRIMARY KEY, "
+		"value TEXT);"
 		
 		"CREATE TABLE IF NOT EXISTS diary ("
 		"id INTEGER PRIMARY KEY AUTOINCREMENT,"
 		"year INTEGER, "
 		"month INTEGER, "
 		"day INTEGER, "
-		"content TEXT);";
+		"content TEXT);"
 
+		"INSERT OR IGNORE INTO config(key,value) VALUES ('master_password', '1234');";
 	char* errMsg = nullptr;
 
 	rc = sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
@@ -50,51 +50,26 @@ void sv_init_db() {
 }
 
 void sv_login(SOCKET client_sock, LoginPacket& lp) {
-	sqlite3_stmt* stmt;
+    sqlite3_stmt* stmt;
+    // 아이디 상관없이 DB에 저장된 단 하나의 마스터 패스워드와 비교합니다.
+    const char* sql = "SELECT value FROM config WHERE key = 'master_password' AND value = ?;";
+    
+    sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    sqlite3_bind_text(stmt, 1, lp.password, -1, SQLITE_STATIC);
 
-	const char* sql = "SELECT id FROM users WHERE username = ? AND password = ?;";
-	sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
-	sqlite3_bind_text(stmt, 1, lp.username, -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 2, lp.password, -1, SQLITE_STATIC);
-
-	if (sqlite3_step(stmt) == SQLITE_ROW) {
-		lp.type = Response_Ok;
-		std::cout << "[서버] 로그인 성공 : " << lp.username << std::endl;
-	}
-	else {
-		lp.type = Response_Fail;
-		std::cout << "[서버] 로그인 실패 : " << lp.username << std::endl;
-
-	}
-	sqlite3_finalize(stmt);
-	send(client_sock, (char*)&lp, sizeof(lp), 0);
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        lp.type = Response_Ok;
+        std::cout << "[서버] 인증 성공" << std::endl;
+    } else {
+        lp.type = Response_Fail;
+        std::cout << "[서버] 인증 실패 (잘못된 비밀번호)" << std::endl;
+    }
+    
+    sqlite3_finalize(stmt);
+    send(client_sock, (char*)&lp, sizeof(lp), 0);
 }
 
-void sv_signup(SOCKET client_sock, LoginPacket &lp) {
-	sqlite3_stmt* stmt;
-	const char* sql = "INSERT INTO users(username,password) VALUES (?, ?);";
 
-	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cerr << "[서버] 가입 준비 실패 : " << sqlite3_errmsg(db) << std::endl;
-		return;
-	}
-	sqlite3_bind_text(stmt, 1, lp.username, -1, SQLITE_STATIC);
-	sqlite3_bind_text(stmt, 2, lp.password, -1, SQLITE_STATIC);
-
-	int rc = sqlite3_step(stmt);
-
-	if (rc == SQLITE_DONE) {
-		lp.type = Response_Ok;
-		std::cout << "[서버] 회원 가입 성공 : " << lp.username << std::endl;
-
-	}
-	else {
-		lp.type = Response_Fail;
-		std::cout << "[서버] 회원 가입 실패 : " << sqlite3_errmsg(db) << std::endl;
-	}
-	sqlite3_finalize(stmt);
-	send(client_sock, (char*)&lp, sizeof(lp), 0);
-}
 
 void sv_write_diary(DiaryPacket& packet) {
 	char* sql = sqlite3_mprintf(
@@ -185,8 +160,8 @@ void sv_diary_list(SOCKET client_sock, DiaryPacket& packet) {
 }
 
 void sv_handle_client(SOCKET client_sock) {
-	DiaryPacket packet;
-	int revSize = recv(client_sock, (char*)&packet, sizeof(packet), 0);
+	LoginPacket lp;
+	int revSize = recv(client_sock, (char*)&lp, sizeof(lp), 0);
 	
 	if (revSize <= 0) {
 		closesocket(client_sock);
@@ -195,18 +170,24 @@ void sv_handle_client(SOCKET client_sock) {
 	}
 	
 
-	switch (packet.type) {
+	switch (lp.type) {
+		case Login_Request:
+			sv_login(client_sock,lp);
+			break;
 		case Write_Diary:
-			sv_write_diary(packet);
+			sv_write_diary(*(DiaryPacket*)&lp);
 			break;
 
 		case Read_Diary:
-			sv_read_diary(client_sock, packet);
+			sv_read_diary(client_sock,*(DiaryPacket*)&lp);
 			break;
 
 		case List_Diary:
-			sv_diary_list(client_sock, packet);
+			sv_diary_list(client_sock,*(DiaryPacket*)&lp);
 			break;
+
+		
+		
 	}
 	closesocket(client_sock);
 
