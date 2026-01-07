@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 void sv_init_db() {
 	int rc = sqlite3_open("Diary.db", &db);
 	if (rc != SQLITE_OK) {
-		std::cerr << "[¿¡·¯] DB¸¦ ¿­ ¼ö ¾ø½À´Ï´Ù : " << sqlite3_errmsg(db) << std::endl;
+		std::cerr << "[ì—ëŸ¬] DBë¥¼ ì—´ ìˆ˜ ì—†ìŠµë‹ˆë‹¤ : " << sqlite3_errmsg(db) << std::endl;
 		return;
 
 	}
@@ -40,11 +40,11 @@ void sv_init_db() {
 	rc = sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
 
 	if (rc != SQLITE_OK) {
-		std::cerr << "[¿¡·¯] Å×ÀÌºí »ý¼º ½ÇÆÐ : " << errMsg << std::endl;
+		std::cerr << "[ì—ëŸ¬] í…Œì´ë¸” ìƒì„± ì‹¤íŒ¨ : " << errMsg << std::endl;
 		sqlite3_free(errMsg);
 	}
 	else {
-		std::cout << "[¼­¹ö] SQLite µ¥ÀÌÅÍ º£ÀÌ½º ÁØºñ ¿Ï·á(Diary.db)" << std::endl;
+		std::cout << "[ì„œë²„] SQLite ë°ì´í„° ë² ì´ìŠ¤ ì¤€ë¹„ ì™„ë£Œ(Diary.db)" << std::endl;
 	}
 
 }
@@ -59,11 +59,11 @@ void sv_login(SOCKET client_sock, LoginPacket& lp) {
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		lp.type = Response_Ok;
-		std::cout << "[¼­¹ö] ·Î±×ÀÎ ¼º°ø : " << lp.username << std::endl;
+		std::cout << "[ì„œë²„] ë¡œê·¸ì¸ ì„±ê³µ : " << lp.username << std::endl;
 	}
 	else {
 		lp.type = Response_Fail;
-		std::cout << "[¼­¹ö] ·Î±×ÀÎ ½ÇÆÐ : " << lp.username << std::endl;
+		std::cout << "[ì„œë²„] ë¡œê·¸ì¸ ì‹¤íŒ¨ : " << lp.username << std::endl;
 
 	}
 	sqlite3_finalize(stmt);
@@ -75,7 +75,7 @@ void sv_signup(SOCKET client_sock, LoginPacket &lp) {
 	const char* sql = "INSERT INTO users(username,password) VALUES (?, ?);";
 
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cerr << "[¼­¹ö] °¡ÀÔ ÁØºñ ½ÇÆÐ : " << sqlite3_errmsg(db) << std::endl;
+		std::cerr << "[ì„œë²„] ê°€ìž… ì¤€ë¹„ ì‹¤íŒ¨ : " << sqlite3_errmsg(db) << std::endl;
 		return;
 	}
 	sqlite3_bind_text(stmt, 1, lp.username, -1, SQLITE_STATIC);
@@ -85,12 +85,12 @@ void sv_signup(SOCKET client_sock, LoginPacket &lp) {
 
 	if (rc == SQLITE_DONE) {
 		lp.type = Response_Ok;
-		std::cout << "[¼­¹ö] È¸¿ø °¡ÀÔ ¼º°ø : " << lp.username << std::endl;
+		std::cout << "[ì„œë²„] íšŒì› ê°€ìž… ì„±ê³µ : " << lp.username << std::endl;
 
 	}
 	else {
 		lp.type = Response_Fail;
-		std::cout << "[¼­¹ö] È¸¿ø °¡ÀÔ ½ÇÆÐ : " << sqlite3_errmsg(db) << std::endl;
+		std::cout << "[ì„œë²„] íšŒì› ê°€ìž… ì‹¤íŒ¨ : " << sqlite3_errmsg(db) << std::endl;
 	}
 	sqlite3_finalize(stmt);
 	send(client_sock, (char*)&lp, sizeof(lp), 0);
@@ -106,11 +106,11 @@ void sv_write_diary(DiaryPacket& packet) {
 	int rc = sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
 
 	if (rc != SQLITE_OK) {
-		std::cerr << "{¼­¹ö} DB ÀúÀå ¿¡·¯ : " << errMsg << std::endl;
+		std::cerr << "{ì„œë²„} DB ì €ìž¥ ì—ëŸ¬ : " << errMsg << std::endl;
 		sqlite3_free(errMsg);
 	}
 	else {
-		std::cout << "{¼­¹ö} DB¿¡ ÀÏ±â ÀúÀå ¼º°ø ("
+		std::cout << "{ì„œë²„} DBì— ì¼ê¸° ì €ìž¥ ì„±ê³µ ("
 			<< packet.year << "/" << packet.month << "/" << packet.day << ")" << std::endl;
 	}
 	sqlite3_free(sql);
@@ -124,7 +124,7 @@ void sv_read_diary(SOCKET client_sock, DiaryPacket& packet) {
 
 	const char* sql = "SELECT content FROM diary WHERE year = ? AND month = ? AND day = ?;";
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cerr << "ÁØºñ ½ÇÆÐ : " << sqlite3_errmsg(db) << std::endl;
+		std::cerr << "ì¤€ë¹„ ì‹¤íŒ¨ : " << sqlite3_errmsg(db) << std::endl;
 		return;
 	}
 	sqlite3_bind_int(stmt, 1, packet.year);
@@ -137,12 +137,12 @@ void sv_read_diary(SOCKET client_sock, DiaryPacket& packet) {
 		packet.type = Response_Ok;
 		memset(packet.content, 0, sizeof(packet.content));
 		strncpy_s(packet.content, (char*)content, sizeof(packet.content) - 1);
-		std::cout << "{¼­¹ö} DB¿¡¼­ ÀÏ±â °Ë»ö ¼º°ø : " << packet.year << "/" << packet.month << '/' << packet.day << std::endl;
+		std::cout << "{ì„œë²„} DBì—ì„œ ì¼ê¸° ê²€ìƒ‰ ì„±ê³µ : " << packet.year << "/" << packet.month << '/' << packet.day << std::endl;
 
 	}
 	else {
 		packet.type = Response_Fail;
-		std::cout << "{¼­¹ö} ÇØ´ç ³¯Â¥¿¡ ÀÏ±â°¡ ¾øÀ½" << std::endl;
+		std::cout << "{ì„œë²„} í•´ë‹¹ ë‚ ì§œì— ì¼ê¸°ê°€ ì—†ìŒ" << std::endl;
 	}
 	sqlite3_finalize(stmt);
 	send(client_sock, (char*)&packet, sizeof(packet), 0);
@@ -154,17 +154,17 @@ void sv_diary_list(SOCKET client_sock, DiaryPacket& packet) {
 	const char* sql = "SELECT day FROM diary WHERE year = ? AND month = ? ORDER BY day ASC;";
 
 	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cerr << "¸ñ·Ï Á¶È¸ ÁØºñ ½ÇÆÐ : " << sqlite3_errmsg(db) << std::endl;
+		std::cerr << "ëª©ë¡ ì¡°íšŒ ì¤€ë¹„ ì‹¤íŒ¨ : " << sqlite3_errmsg(db) << std::endl;
 		return;
 	}
 	sqlite3_bind_int(stmt, 1, packet.year);
 	sqlite3_bind_int(stmt, 2, packet.month);
-	std::string listContent = "[" + std::to_string(packet.month) + "¿ù ÀÏ±â ¸ñ·Ï ] : ";
+	std::string listContent = "[" + std::to_string(packet.month) + "ì›” ì¼ê¸° ëª©ë¡ ] : ";
 
 	bool found = false;
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int day = sqlite3_column_int(stmt, 0);
-		listContent += std::to_string(day) + "ÀÏ, ";
+		listContent += std::to_string(day) + "ì¼, ";
 		found = true;
 	}
 
@@ -179,7 +179,7 @@ void sv_diary_list(SOCKET client_sock, DiaryPacket& packet) {
 	sqlite3_finalize(stmt);
 
 	send(client_sock, (char*)&packet, sizeof(packet), 0);
-	std::cout << "{¼­¹ö} DB ¸ñ·Ï Àü¼Û ¿Ï·á : " << packet.year << "/" << packet.month << std::endl;
+	std::cout << "{ì„œë²„} DB ëª©ë¡ ì „ì†¡ ì™„ë£Œ : " << packet.year << "/" << packet.month << std::endl;
 	
 
 }

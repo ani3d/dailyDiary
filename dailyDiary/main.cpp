@@ -23,7 +23,7 @@ int main() {
 	bind(listenSock, (sockaddr*)&serverAddr, sizeof(serverAddr));
 	listen(listenSock, SOMAXCONN);
 
-	std::cout << "ÀÏ±âÀå ¼­¹ö ½ÃÀÛ(port : 9000)" << std::endl;
+	std::cout << "ì¼ê¸°ìž¥ ì„œë²„ ì‹œìž‘(port : 9000)" << std::endl;
 
 	while (1) {
 		sockaddr_in clientAddr;
@@ -31,7 +31,7 @@ int main() {
 
 		SOCKET clientSock = accept(listenSock, (sockaddr*)&clientAddr, &addrLen);
 		if (clientSock != INVALID_SOCKET) {
-			std::cout << "Å¬¶óÀÌ¾ðÆ® Á¢¼Ó ¼º°ø ! " << std::endl;
+			std::cout << "í´ë¼ì´ì–¸íŠ¸ ì ‘ì† ì„±ê³µ ! " << std::endl;
 			sv_handle_client(clientSock);
 		}
 	}
