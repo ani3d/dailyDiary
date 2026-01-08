@@ -8,6 +8,7 @@ void sv_handle_client(SOCKET client_sock);
 void sv_init_db();
 
 int main() {
+	system("chcp 65001");
 	std::setlocale(LC_ALL,"ko_KR.UTF-8");
 	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return -1;

@@ -31,10 +31,10 @@ void sv_init_db() {
 		"year INTEGER, "
 		"month INTEGER, "
 		"day INTEGER, "
-		"content TEXT),"
-		"PRIMARY KEY(year,month, day));";
+		"content TEXT,"
+		"PRIMARY KEY(year, month, day));"
 
-		"INSERT OR IGNORE INTO config(key,value) VALUES ('master_password', '1234');";
+		"INSERT OR IGNORE INTO config(key, value) VALUES ('master_password', '1234');";
 	char* errMsg = nullptr;
 
 	rc = sqlite3_exec(db, sql, nullptr, nullptr, &errMsg);
@@ -69,6 +69,30 @@ void sv_login(SOCKET client_sock, LoginPacket& lp) {
     send(client_sock, (char*)&lp, sizeof(lp), 0);
 }
 
+void sv_save_to_txt(int y,int m,int d, const char* content){
+	try{
+
+		std::filesystem::create_directories("DiaryData");
+		char dirPath[256];
+		sprintf(dirPath,"DiaryData/Diary/%04d/%02d",y,m);
+		fs::create_directories(dirPath);
+	
+		char fileName[128];
+		sprintf(fileName,"%s/%02d.txt",dirPath,d);
+		std::ofstream outFile(fileName,std::ios::binary|std::ios::trunc);
+		if(outFile.is_open()){
+			unsigned char bom[]={0xEF,0xBB,0xBF};
+			outFile.write(reinterpret_cast<char*>(bom),3);
+			outFile<<"---"<<y<<"년"<<m<<"월"<<d<<"일 의 기록 ---\n";
+			outFile<<content;
+			outFile.close();
+			std::cout<<"[서버] 텍스트파일 저장/갱신 완료 : "<<fileName<<std::endl;
+		}
+	}catch(const std::exception& e){
+		std::cerr << "[서버] 파일 저장 중 예외 발생 : "<<e.what()<<std::endl;
+	}
+
+}
 
 
 void sv_write_diary(DiaryPacket& packet) {
@@ -87,9 +111,26 @@ void sv_write_diary(DiaryPacket& packet) {
 	else {
 		std::cout << "{서버} DB에 일기 저장 성공 ("
 			<< packet.year << "/" << packet.month << "/" << packet.day << ")" << std::endl;
+			sv_save_to_txt(packet.year,packet.month,packet.day,packet.content);
 	}
 	sqlite3_free(sql);
 
+}
+void sv_update_diary(DiaryPacket& packet){
+	char * sql=sqlite3_mprintf(
+		"UPDATE diary SET content = '%q' WHERE year = & AND month = %d AND day = %d;",
+		packet.content,packet.year,packet.month,packet.day);
+	
+	char *errMsg=nullptr;
+	if(sqlite3_exec(db,sql,nullptr,nullptr,&errMsg)!=SQLITE_OK){
+		std::cerr<<"[서버] SQL 수정 에러 : "<<errMsg<<std::endl;
+		sqlite3_free(errMsg);
+
+	}else{
+		std::cout<<"[서버] DB 수정 성공. 텍스트 파일 갱신\n";
+		sv_save_to_txt(packet.year,packet.month,packet.day,packet.content);
+	}
+	sqlite3_free(sql);
 }
 
 
@@ -160,8 +201,8 @@ void sv_diary_list(SOCKET client_sock, DiaryPacket& packet) {
 }
 
 void sv_handle_client(SOCKET client_sock) {
-	LoginPacket lp;
-	int revSize = recv(client_sock, (char*)&lp, sizeof(lp), 0);
+	DiaryPacket packet;
+	int revSize = recv(client_sock, (char*)&packet, sizeof(packet), 0);
 	
 	if (revSize <= 0) {
 		closesocket(client_sock);
@@ -170,22 +211,25 @@ void sv_handle_client(SOCKET client_sock) {
 	}
 	
 
-	switch (lp.type) {
+	switch (packet.type) {
 		case Login_Request:
-			sv_login(client_sock,lp);
+			sv_login(client_sock,*(LoginPacket*)&packet);
 			break;
 		case Write_Diary:
-			sv_write_diary(*(DiaryPacket*)&lp);
+			sv_write_diary(packet);
 			break;
 
 		case Read_Diary:
-			sv_read_diary(client_sock,*(DiaryPacket*)&lp);
+			sv_read_diary(client_sock,packet);
 			break;
 
 		case List_Diary:
-			sv_diary_list(client_sock,*(DiaryPacket*)&lp);
+			sv_diary_list(client_sock,packet);
 			break;
-
+		
+		case Update_Diary:
+			sv_update_diary(packet);
+			break;
 		
 		
 	}

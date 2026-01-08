@@ -32,6 +32,22 @@ void cl_write_diary(SOCKET sock) {
     send(sock, (char*)&packet, sizeof(packet), 0);
 }
 
+void cl_update_diary(SOCKET sock){
+    DiaryPacket packet;
+    memset(&packet,0,sizeof(packet));
+    packet.type=Update_Diary;
+
+    std::cout<<"\n[일기 수정] 날짜 입력 (연 월 일): ";
+    std::cin>>packet.year>>packet.month>>packet.day;
+    std::cin.ignore();
+
+    std::cout<<"새로운 내용 입력 : ";
+    std::cin.getline(packet.content,2048);
+    
+    send(sock,(char*)&packet,sizeof(packet),0);
+    std::cout<<"서버에 수정 요청 보냄"<<std::endl;
+}
+
 void cl_read_diary(SOCKET sock) {
     DiaryPacket packet;
     memset(&packet, 0, sizeof(packet));
@@ -92,8 +108,9 @@ bool cl_login(SOCKET sock) {
         return false;
     }
 }
-int main()
-{
+
+int main(){
+    system("chcp 65001");
     std::setlocale(LC_ALL,"ko_KR.UTF-8");
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -126,35 +143,87 @@ int main()
                 closesocket(tempSock);
             }
         }
+
         else{
             int choice;
-            std::cout<<"\n 일기장 메뉴\n";
-            std::cout<<"1.일기 쓰기 2. 일기 확인 3.일기 목록 4. 로그아웃 -1 종료 \n 선택 :";
-            std::cin>>choice;
-            std::cin.ignore();
-
+            std::cout<<"\n========[ 일기장 ]========\n";
+            std::cout<<"1. 일기 작성\n2. 내 일기장 열기(조회/수정)\n3. 로그아웃\n-1. 종료\n입력 : ";
+            std::cin>>choice;std::cin.ignore();
             if(choice==-1) break;
-            if(choice==4){
-                is_logged_in=false;
-                continue;
+            if(choice==3){
+                is_logged_in=false;continue;
             }
             SOCKET tempSock=socket(AF_INET,SOCK_STREAM,0);
             if(connect(tempSock,(sockaddr*)&serverAddr,sizeof(serverAddr))!=SOCKET_ERROR){
-                switch(choice){
-                    case Write_Diary: cl_write_diary(tempSock);std::cout<<"저장 완료 !\n"; break;
-                    case Read_Diary: cl_read_diary(tempSock); break;
-                    case List_Diary: cl_list_diary(tempSock); break;
+                if(choice==1){
+                    cl_write_diary(tempSock);
+                    std::cout<<"저장 완료\n";
                 }
-                
+                else if(choice==2){
+                    DiaryPacket packet;
+                    memset(&packet,0,sizeof(packet));
+                    packet.type=List_Diary;
+                    std::cout<<"\n조회할 연도와 월 입력 : ";
+                    if(!(std::cin>>packet.year>>packet.month)){
+                        std::cout<<"잘못된 입력. 숫자만 입력하세요\n";
+                        std::cin.clear();
+                        std::cin.ignore(INT_MAX,'\n');
+                        closesocket(tempSock);
+                        continue;
+                    }
+                    std::cin.ignore();
+                    
+                    send(tempSock,(char*)&packet,sizeof(packet),0);
+                    recv(tempSock,(char*)&packet,sizeof(packet),0);
+
+
+                    if(packet.type==Response_Ok){
+                        std::cout<<"\n--- 작성된 일기 목록 ---\n"<<packet.content<<'\n';
+                        std::cout<<"상세 보기 또는 수정을 원하는 날짜 입력 : (취소 : 0) ";
+                        int tDay;std::cin>>tDay;std::cin.ignore();
+
+                        if(tDay>0){
+                            std::cout<<"1. 읽기 2. 수정 (취소 : 0): ";
+                            int act;std::cin>>act; std::cin.ignore();
+                        
+
+                        
+                            closesocket(tempSock);
+                            tempSock=socket(AF_INET,SOCK_STREAM,0);
+                            connect(tempSock,(sockaddr*)&serverAddr,sizeof(serverAddr));
+                            
+                            if(act==1){
+                                packet.type=Read_Diary; packet.day=tDay;
+                                send(tempSock,(char*)&packet,sizeof(packet),0);
+                                recv(tempSock,(char*)&packet,sizeof(packet),0);
+                                std::cout<<"\n["<<tDay<<"일 내용]\n"<<packet.content<<std::endl;
+                            }
+                            else if(act==2){
+                                packet.type=Update_Diary; packet.day=tDay;
+                                std::cout<<"새로운 내용 입력 : ";
+                                std::cin.getline(packet.content,2048);
+                                std::cin.ignore();
+                                send(tempSock,(char*)&packet,sizeof(packet),0);
+                                std::cout<<"수정 및 업데이트 완료";
+
+                            }
+                        }
+                        
+                    }
+                    else{
+                        std::cout<<"해당 월 작성 일기 없음";
+                    }
+                }
             }
             closesocket(tempSock);
         }
 
+
     }
 
-    
     WSACleanup();
 
     return 0;
 }
+    
 

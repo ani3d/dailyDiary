@@ -7,7 +7,7 @@ enum PacketType {
 	Read_Diary = 2,
 	List_Diary = 3,
 	Login_Request=4,
-
+	Update_Diary=5,
 
 	Response_Ok = 200,
 	Response_Fail = 400
