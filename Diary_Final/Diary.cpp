@@ -8,7 +8,7 @@
 #include <filesystem>
 #include "sqlite3.h"
 #include "Packet.h"
-
+//병합 성공여부 확인하기
 #pragma comment(lib, "ws2_32.lib")
 
 sqlite3* db;
